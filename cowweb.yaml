@@ -1,0 +1,60 @@
+---
+# Source: cowweb-helm/templates/cowweb.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: production
+  name: cowweb
+spec:
+  type: LoadBalancer
+  selector:
+    app: cowweb
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    
+    
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  namespace: production
+  name: cowweb
+  labels:
+    app: cowweb
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: cowweb
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: cowweb
+    spec:
+      containers:
+      - name: cowweb
+        image: hhayakaw/cowweb:v1.0-master-f09df3fb90028ae4a4a5d2a7bada6f6468cc0f5b
+        ports:
+        - name: api
+          containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /cowsay/ping
+            port: api
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /cowsay/ping
+            port: api
+          initialDelaySeconds: 15
+          periodSeconds: 20
